@@ -1,0 +1,77 @@
+============================================================
+       VULNERABILITY SCAN REPORT
+============================================================
+
+Target:          10.136.3.136
+Port range:      1 - 100
+Scan started:    2026-09-13 13:25:13
+Scan ended:      2026-09-13 13:27:39
+Duration:        145.4 seconds
+
+------------------------------------------------------------
+1. OPEN PORTS
+------------------------------------------------------------
+Open ports found: [53]
+
+Banner information:
+  Port 53: No banner received
+
+------------------------------------------------------------
+2. HOST INFORMATION (Nmap)
+------------------------------------------------------------
+Hostnames: [{'name': '', 'type': ''}]
+OS match: Android 9 (Linux 4.9) (accuracy: 98)
+  Vendor: Google, Type: phone, Family: Android, Gen: 9.X
+  CPE: cpe:/o:google:android:9
+  Vendor: Linux, Type: phone, Family: Linux, Gen: 4.X
+  CPE: cpe:/o:linux:linux_kernel:4.9
+OS match: Android 10 (Linux 4.14) (accuracy: 97)
+  Vendor: Google, Type: phone, Family: Android, Gen: 10.X
+  CPE: cpe:/o:google:android:10
+  Vendor: Linux, Type: phone, Family: Linux, Gen: 4.X
+  CPE: cpe:/o:linux:linux_kernel:4.14
+OS match: Android 9 - 11 (Linux 4.9 - 4.14) (accuracy: 96)
+  Vendor: Google, Type: phone, Family: Android, Gen: 9.X
+  CPE: cpe:/o:google:android:9
+  Vendor: Google, Type: phone, Family: Android, Gen: 10.X
+  CPE: cpe:/o:google:android:10
+  Vendor: Google, Type: phone, Family: Android, Gen: 11.X
+  CPE: cpe:/o:google:android:11
+  Vendor: Linux, Type: phone, Family: Linux, Gen: 4.X
+  CPE: cpe:/o:linux:linux_kernel:4
+OS match: OpenWrt 22.03 (Linux 5.10) (accuracy: 96)
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 5.X
+  CPE: cpe:/o:linux:linux_kernel:5.10
+OS match: Linux 2.6.32 - 3.10 (accuracy: 96)
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 2.6.X
+  CPE: cpe:/o:linux:linux_kernel:2.6
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 3.X
+  CPE: cpe:/o:linux:linux_kernel:3
+OS match: Nintendo Switch (accuracy: 95)
+  Vendor: Nintendo, Type: game console, Family: embedded, Gen: None
+OS match: Asus RT-N10 router or AXIS 211A Network Camera (Linux 2.6) (accuracy: 95)
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 2.6.X
+  CPE: cpe:/o:linux:linux_kernel:2.6
+  Vendor: Asus, Type: WAP, Family: embedded, Gen: None
+  CPE: cpe:/h:asus:rt-n10
+  Vendor: AXIS, Type: webcam, Family: embedded, Gen: None
+  CPE: cpe:/h:axis:211_network_camera
+OS match: Linux 2.6.18 (accuracy: 95)
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 2.6.X
+  CPE: cpe:/o:linux:linux_kernel:2.6.18
+OS match: Linux 2.6.16 (accuracy: 94)
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 2.6.X
+  CPE: cpe:/o:linux:linux_kernel:2.6.16
+OS match: Linux 2.6.18 - 2.6.32 (accuracy: 94)
+  Vendor: Linux, Type: general purpose, Family: Linux, Gen: 2.6.X
+  CPE: cpe:/o:linux:linux_kernel:2.6
+Uptime: 976684 seconds (raw: ?)
+
+------------------------------------------------------------
+3. VULNERABILITIES (Nmap --script=vuln)
+------------------------------------------------------------
+No vulnerabilities detected by Nmap vuln scripts.
+
+============================================================
+                    END OF REPORT
+============================================================
