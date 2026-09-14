@@ -1,23 +1,6 @@
-"""
-Week 3 - Phishing Email Detection Model
-=========================================
-Step 1: Dataset + basic setup
-
-Builds a small labeled email dataset and prepares it for ML.
-Dependencies: numpy, pandas, scikit-learn (install with the same Python
-interpreter that runs this script).
-"""
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
-
-
-# --- Step 1: Define the dataset ---
-
-# Each entry: (email_text, label)
-# Label: 1 = Phishing, 0 = Safe
 emails = [
-    # Phishing emails (label = 1)
     ("Your account will be suspended. Click here to verify now.",
      1),
     ("URGENT: You have won a prize! Claim your reward within 24 hours.",
@@ -33,7 +16,6 @@ emails = [
     ("Limited time offer! Act now or lose your account forever. Click to confirm.",
      1),
 
-    # Safe / legitimate emails (label = 0)
     ("Hi John, the meeting is scheduled for 3pm tomorrow in room B.",
      0),
     ("Please find the report attached. Let me know if you have questions.",
@@ -53,27 +35,21 @@ emails = [
 ]
 
 
-# --- Step 2: Load into a DataFrame ---
-
 df = pd.DataFrame(emails, columns=["email_text", "label"])
 df["label_name"] = df["label"].map({1: "Phishing", 0: "Safe"})
 
 
-# --- Step 3: Split into features (X) and labels (y) ---
 
-X = df["email_text"]   # The email content
-y = df["label"]        # 1 = Phishing, 0 = Safe
+X = df["email_text"]   
+y = df["label"]        
 
 
-# --- Step 4: Train/test split ---
 
-# 80% training, 20% testing, fixed random state for reproducibility
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
 
-# --- Step 5: Print everything so we can see it ---
 
 print("=" * 60)
 print("DATASET OVERVIEW")
@@ -123,7 +99,6 @@ def extract_features(email_text):
     """
     features = {}
 
-    # --- URL features ---
     features["url_count"] = (
         email_text.lower().count("http://")
         + email_text.lower().count("https://")
@@ -139,7 +114,7 @@ def extract_features(email_text):
         1 for tld in suspicious_tlds if tld in email_text.lower()
     )
 
-    # --- Keyword features (case-insensitive) ---
+   
     text_lower = email_text.lower()
 
     urgent_keywords = [
@@ -166,7 +141,7 @@ def extract_features(email_text):
         1 for kw in prize_keywords if kw in text_lower
     )
 
-    # --- Generic greeting ---
+  
     generic_greetings = [
         "dear customer", "dear member", "dear user",
         "valued customer", "to whom it may concern",
@@ -175,7 +150,7 @@ def extract_features(email_text):
         g in email_text.lower() for g in generic_greetings
     ) else 0
 
-    # --- Text features ---
+  
     features["email_length"] = len(email_text)
     if len(email_text) > 0:
         features["uppercase_ratio"] = sum(
@@ -240,7 +215,6 @@ print(X_features.describe().loc[["mean", "std"]].round(3).to_string())
 print()
 
 
-# --- Train/test split on the engineered features ---
 
 X_train_feat, X_test_feat, y_train_feat, y_test_feat = train_test_split(
     X_features, y_labels, test_size=0.2, random_state=42, stratify=y_labels
@@ -251,7 +225,6 @@ print(f"Test set:     {len(X_test_feat)} samples")
 print()
 
 
-# --- Train the classifier ---
 
 model = MultinomialNB()
 model.fit(X_train_feat, y_train_feat)
@@ -262,7 +235,6 @@ print(f"  Features used: {list(feature_names)}")
 print()
 
 
-# --- Evaluate on the test set ---
 
 y_pred = model.predict(X_test_feat)
 accuracy = accuracy_score(y_test_feat, y_pred)
@@ -284,7 +256,7 @@ print(classification_report(y_test_feat, y_pred,
                             zero_division=0))
 print()
 
-# --- Also evaluate on the full dataset (training + test) for reference ---
+
 y_pred_all = model.predict(X_features)
 print("-" * 60)
 print("FULL DATASET EVALUATION (for reference)")
@@ -292,7 +264,7 @@ print("-" * 60)
 print(f"Accuracy (full dataset): {accuracy_score(y_labels, y_pred_all):.1%}")
 print()
 
-# --- Classify some new, unseen emails ---
+
 
 new_emails = [
     (
@@ -343,22 +315,16 @@ print("STEP 3 COMPLETE — classifier trained, evaluated, and tested.")
 print("=" * 60)
 
 
-# =============================================================================
-# STEP 4 — EXPANDED DATASET + RETRAIN + FINAL SUMMARY
-# =============================================================================
-
 print()
 print("=" * 60)
 print("STEP 4 — EXPANDED DATASET + FINAL MODEL")
 print("=" * 60)
 
 
-# --- Expanded dataset: more phishing + safe examples ---
-# In a real project this would come from a CSV or database.
-# Here we define more samples so the model has enough data to learn from.
+
 
 expanded_emails = [
-    # ---- Phishing (label=1) ----
+    
     ("Your account will be suspended. Click here to verify now.", 1),
     ("URGENT: You have won a prize! Claim your reward within 24 hours.",
      1),
@@ -398,7 +364,7 @@ expanded_emails = [
     ("Security Alert: Someone tried to reset your password. If this "
      "wasn't you, secure your account now: http://password-reset.tk", 1),
 
-    # ---- Safe / legitimate (label=0) ----
+
     ("Hi John, the meeting is scheduled for 3pm tomorrow in room B.", 0),
     ("Please find the report attached. Let me know if you have "
      "questions.", 0),
@@ -437,7 +403,7 @@ expanded_emails = [
 ]
 
 
-# --- Load expanded dataset ---
+
 
 expanded_df = pd.DataFrame(expanded_emails, columns=["email_text", "label"])
 expanded_df["label_name"] = expanded_df["label"].map({1: "Phishing", 0: "Safe"})
@@ -448,7 +414,7 @@ print(f"  Safe:     {(expanded_df['label'] == 0).sum()}")
 print(f"  (+{len(expanded_df) - len(df)} more emails vs Step 1 dataset)")
 print()
 
-# --- Build feature matrix from expanded dataset ---
+
 
 expanded_features = pd.DataFrame(
     [extract_features(text) for text in expanded_df["email_text"]],
@@ -461,7 +427,7 @@ y_exp = expanded_df["label"]
 print(f"Expanded feature matrix: {X_exp.shape[0]} samples x {X_exp.shape[1]} features")
 print()
 
-# --- Train/test split on expanded dataset ---
+
 
 X_train_exp, X_test_exp, y_train_exp, y_test_exp = train_test_split(
     X_exp, y_exp, test_size=0.2, random_state=42, stratify=y_exp
@@ -471,7 +437,7 @@ print(f"Training set: {len(X_train_exp)} samples")
 print(f"Test set:     {len(X_test_exp)} samples")
 print()
 
-# --- Train the classifier on the expanded dataset ---
+
 
 model_exp = MultinomialNB()
 model_exp.fit(X_train_exp, y_train_exp)
@@ -480,7 +446,7 @@ print("Classifier: Multinomial Naive Bayes (trained on expanded dataset)")
 print(f"  Classes: {model_exp.classes_}")
 print()
 
-# --- Evaluate on the test set ---
+
 
 y_pred_exp = model_exp.predict(X_test_exp)
 acc_exp = accuracy_score(y_test_exp, y_pred_exp)
@@ -504,7 +470,7 @@ print(classification_report(
 ))
 print()
 
-# --- Classify the same new emails with the expanded model ---
+
 
 print("-" * 60)
 print("PREDICTIONS ON NEW EMAILS (EXPANDED MODEL)")
