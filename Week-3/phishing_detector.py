@@ -114,7 +114,6 @@ def extract_features(email_text):
         1 for tld in suspicious_tlds if tld in email_text.lower()
     )
 
-   
     text_lower = email_text.lower()
 
     urgent_keywords = [
@@ -141,7 +140,6 @@ def extract_features(email_text):
         1 for kw in prize_keywords if kw in text_lower
     )
 
-  
     generic_greetings = [
         "dear customer", "dear member", "dear user",
         "valued customer", "to whom it may concern",
@@ -150,7 +148,6 @@ def extract_features(email_text):
         g in email_text.lower() for g in generic_greetings
     ) else 0
 
-  
     features["email_length"] = len(email_text)
     if len(email_text) > 0:
         features["uppercase_ratio"] = sum(
@@ -193,6 +190,7 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report,
 )
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 # --- Build the feature matrix for the whole dataset ---
@@ -265,7 +263,6 @@ print(f"Accuracy (full dataset): {accuracy_score(y_labels, y_pred_all):.1%}")
 print()
 
 
-
 new_emails = [
     (
         "Your PayPal account has been limited. Click here to verify "
@@ -322,9 +319,7 @@ print("=" * 60)
 
 
 
-
 expanded_emails = [
-    
     ("Your account will be suspended. Click here to verify now.", 1),
     ("URGENT: You have won a prize! Claim your reward within 24 hours.",
      1),
@@ -364,7 +359,6 @@ expanded_emails = [
     ("Security Alert: Someone tried to reset your password. If this "
      "wasn't you, secure your account now: http://password-reset.tk", 1),
 
-
     ("Hi John, the meeting is scheduled for 3pm tomorrow in room B.", 0),
     ("Please find the report attached. Let me know if you have "
      "questions.", 0),
@@ -403,8 +397,6 @@ expanded_emails = [
 ]
 
 
-
-
 expanded_df = pd.DataFrame(expanded_emails, columns=["email_text", "label"])
 expanded_df["label_name"] = expanded_df["label"].map({1: "Phishing", 0: "Safe"})
 
@@ -413,7 +405,6 @@ print(f"  Phishing: {(expanded_df['label'] == 1).sum()}")
 print(f"  Safe:     {(expanded_df['label'] == 0).sum()}")
 print(f"  (+{len(expanded_df) - len(df)} more emails vs Step 1 dataset)")
 print()
-
 
 
 expanded_features = pd.DataFrame(
@@ -427,8 +418,6 @@ y_exp = expanded_df["label"]
 print(f"Expanded feature matrix: {X_exp.shape[0]} samples x {X_exp.shape[1]} features")
 print()
 
-
-
 X_train_exp, X_test_exp, y_train_exp, y_test_exp = train_test_split(
     X_exp, y_exp, test_size=0.2, random_state=42, stratify=y_exp
 )
@@ -437,16 +426,12 @@ print(f"Training set: {len(X_train_exp)} samples")
 print(f"Test set:     {len(X_test_exp)} samples")
 print()
 
-
-
 model_exp = MultinomialNB()
 model_exp.fit(X_train_exp, y_train_exp)
 
 print("Classifier: Multinomial Naive Bayes (trained on expanded dataset)")
 print(f"  Classes: {model_exp.classes_}")
 print()
-
-
 
 y_pred_exp = model_exp.predict(X_test_exp)
 acc_exp = accuracy_score(y_test_exp, y_pred_exp)
@@ -469,7 +454,6 @@ print(classification_report(
     zero_division=0,
 ))
 print()
-
 
 
 print("-" * 60)
@@ -499,48 +483,161 @@ for email, expected in new_emails:
 
 print()
 print("=" * 60)
+print("TEXT VECTORIZATION (CountVectorizer)")
+print("=" * 60)
+
+# Build text features from the expanded dataset using CountVectorizer
+vectorizer = CountVectorizer(
+    lowercase=True,
+    max_features=200,
+    min_df=1,
+)
+X_text = vectorizer.fit_transform(expanded_df["email_text"])
+
+print(f"Text vocabulary size: {len(vectorizer.vocabulary_)} words")
+print(f"Text feature matrix: {X_text.shape[0]} samples x {X_text.shape[1]} features")
+print()
+
+# Show some example words learned by CountVectorizer
+sample_words = list(vectorizer.vocabulary_.keys())[:15]
+print(f"Sample words in vocabulary: {', '.join(sample_words)} ...")
+print()
+
+# Combine engineered features with text features (hybrid approach)
+text_df = pd.DataFrame(
+    X_text.toarray(),
+    columns=[f"word_{w}" for w in vectorizer.get_feature_names_out()],
+    index=expanded_df.index,
+)
+X_hybrid = pd.concat([expanded_features[feature_names], text_df], axis=1)
+
+print("=" * 60)
+print("HYBRID MODEL — ENGINEERED FEATURES + TEXT VECTORIZER")
+print("=" * 60)
+
+print(f"Hybrid feature matrix: {X_hybrid.shape[0]} samples x {X_hybrid.shape[1]} features")
+print(f"  Engineered features: {len(feature_names)}")
+print(f"  Text features (word counts): {len(vectorizer.vocabulary_)}")
+print()
+
+X_train_hybrid, X_test_hybrid, y_train_hybrid, y_test_hybrid = train_test_split(
+    X_hybrid, y_exp, test_size=0.2, random_state=42, stratify=y_exp,
+)
+print(f"Training set: {len(X_train_hybrid)} samples")
+print(f"Test set:     {len(X_test_hybrid)} samples")
+print()
+
+model_hybrid = MultinomialNB()
+model_hybrid.fit(X_train_hybrid, y_train_hybrid)
+
+print("Hybrid classifier: Multinomial Naive Bayes")
+print(f"  Total features: {X_hybrid.shape[1]}")
+print(f"    - Engineered: {len(feature_names)}")
+print(f"    - Text (words): {len(vectorizer.vocabulary_)}")
+print()
+
+y_pred_hybrid = model_hybrid.predict(X_test_hybrid)
+acc_hybrid = accuracy_score(y_test_hybrid, y_pred_hybrid)
+cm_hybrid = confusion_matrix(y_test_hybrid, y_pred_hybrid)
+
+print("-" * 60)
+print("HYBRID MODEL — TEST SET EVALUATION")
+print("-" * 60)
+print(f"Accuracy: {acc_hybrid:.1%}")
+print()
+print("Confusion Matrix:")
+print(f"  Predicted:    Safe  Phishing")
+print(f"  Actual Safe    {cm_hybrid[0][0]:>4}     {cm_hybrid[0][1]:>4}")
+print(f"  Actual Phish   {cm_hybrid[1][0]:>4}     {cm_hybrid[1][1]:>4}")
+print()
+print("Classification Report:")
+print(classification_report(
+    y_test_hybrid, y_pred_hybrid,
+    target_names=["Safe (0)", "Phishing (1)"],
+    zero_division=0,
+))
+print()
+
+# Predict on new emails using the hybrid model
+print("-" * 60)
+print("PREDICTIONS ON NEW EMAILS (HYBRID MODEL)")
+print("-" * 60)
+for email, expected in new_emails:
+    feats = extract_features(email)
+    feat_vec_eng = pd.DataFrame([feats], columns=feature_names)
+    feat_vec_text = vectorizer.transform([email])
+    feat_vec_text_df = pd.DataFrame(
+        feat_vec_text.toarray(),
+        columns=[f"word_{w}" for w in vectorizer.get_feature_names_out()],
+    )
+    feat_vec_hybrid = pd.concat([feat_vec_eng, feat_vec_text_df], axis=1)
+    
+    pred = model_hybrid.predict(feat_vec_hybrid)[0]
+    pred_label = "Phishing" if pred == 1 else "Safe"
+    probs = model_hybrid.predict_proba(feat_vec_hybrid)[0]
+    phishing_prob = probs[1] if len(probs) > 1 else 0.0
+    status = "OK" if (
+        (pred == 1 and "Phishing" in expected) or
+        (pred == 0 and "Safe" in expected)
+    ) else "MISS"
+    print(f"\nEmail: {email}")
+    print(f"  Expected: {expected}")
+    print(f"  Predicted: {pred_label}  [{status}]  "
+          f"(phishing confidence: {phishing_prob:.1%})")
+
+print()
+print("=" * 60)
+print("MODEL COMPARISON")
+print("=" * 60)
+print(f"""                     Accuracy
+-------------------------------------------
+Engineered only          {acc_exp:.1%}
+Hybrid (eng + text)      {acc_hybrid:.1%}
+""")
+
+print()
+
+print("=" * 60)
 print("FINAL SUMMARY")
 print("=" * 60)
 print(f"""
-Model: Multinomial Naive Bayes
+Model: Multinomial Naive Bayes (Hybrid)
 Dataset: {len(expanded_df)} emails ({y_exp.sum()} phishing + {(1-y_exp).sum()} safe)
-Features: {len(feature_names)} engineered features
-  URL features: url_count, has_http, has_at_symbol, suspicious_tld_count
-  Keyword features: urgent_keyword_count, verify_keyword_count, prize_keyword_count
-  Text features: generic_greeting, email_length, uppercase_ratio
+Features: {X_hybrid.shape[1]} total
+  Engineered ({len(feature_names)}):
+    URL: url_count, has_http, has_at_symbol, suspicious_tld_count
+    Keyword: urgent_keyword_count, verify_keyword_count, prize_keyword_count
+    Text: generic_greeting, email_length, uppercase_ratio
+  Text vectorizer ({len(vectorizer.vocabulary_)} words):
+    CountVectorizer on raw email text — captures word patterns beyond the
+    keyword list (e.g. repeated "account", "verify", "click", etc.)
 
-Test set accuracy: {acc_exp:.1%}
+Test set accuracy (hybrid): {acc_hybrid:.1%}
 Confusion matrix:
-  TN={cm_exp[0][0]}  FP={cm_exp[0][1]}
-  FN={cm_exp[1][0]}  TP={cm_exp[1][1]}
+  TN={cm_hybrid[0][0]}  FP={cm_hybrid[0][1]}
+  FN={cm_hybrid[1][0]}  TP={cm_hybrid[1][1]}
 
 Key observations:
   - URL features (url_count, has_http, suspicious_tld_count) are the
     strongest individual signals for phishing detection.
-  - Keyword features help but are sparse - many phishing emails use
-    different wording each time.
-  - Text features (length, uppercase_ratio) have high variance and are
-    less reliable on their own.
-  - The model performs better with more training data - the expanded
-    dataset gives it more examples of phishing patterns to learn from.
-  - With only {len(X_test_exp)} test samples, the accuracy estimate is noisy.
-    A larger held-out set or cross-validation would give a more reliable
-    estimate.
+  - CountVectorizer captures additional text patterns the keyword list
+    misses (e.g. "account", "verify", "click" used across many emails).
+  - The hybrid model combines explicit phishing signals (URLs, keywords)
+    with general text patterns from word counts.
+  - With only a small dataset, accuracy is optimistic — a larger dataset
+    would give more reliable results.
 
 Limitations:
-  - Small dataset: real phishing detection systems use thousands of
-    labeled emails.
-  - Keyword features are English-only and can be evaded by attackers
-    who change their wording.
-  - URL features only work when URLs are present in the email text.
-  - No content-based features (e.g. CountVectorizer on the full email
-    text) - those can catch patterns the keyword list misses.
+  - Small dataset: real phishing detection uses thousands of labeled emails.
+  - CountVectorizer vocabulary is built from training data only — new words
+    in unseen emails are ignored (out-of-vocabulary problem).
+  - Keyword features are English-only and can be evaded by changing wording.
+  - URL features only work when URLs are present in email text.
   - This is a learning exercise, not a production system.
 
 Next steps (optional improvements):
   - Add more training samples, especially edge cases.
-  - Add CountVectorizer or TfidfVectorizer features alongside the
-    engineered features.
+  - Try TfidfVectorizer instead of CountVectorizer (weights rare words higher).
   - Try other classifiers (LogisticRegression, RandomForest).
   - Add features like: number of exclamation marks, presence of
     HTML tags, sender domain analysis, etc.
